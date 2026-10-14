@@ -6,3 +6,11 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Private user data, backups, and uploaded media
+*backup*.json
+*.backup.json
+user_data/
+uploads/
+*.local.json
+

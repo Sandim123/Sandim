@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { LoginScreen } from './components/LoginScreen';
+import { FirstTimeSetup } from './components/FirstTimeSetup';
 import { WelcomePopupModal } from './components/WelcomePopupModal';
 import { SurpriseMessageManager } from './components/SurpriseMessageManager';
 import { RelationshipCounter } from './components/RelationshipCounter';
@@ -48,6 +49,8 @@ import {
   clearSession,
   getStoredAccounts,
   getStoredWelcomeMessage,
+  hasInitializedAccounts,
+  resetSanctuaryAccounts,
 } from './lib/auth';
 
 import { calculateRelationshipTime, formatDatePretty } from './lib/dateUtils';
@@ -320,12 +323,28 @@ export default function App() {
     );
   }
 
-  // If not logged in, enforce authentication barrier completely!
+  // First time on this device: Prompt couple to create their private passwords!
+  if (!hasInitializedAccounts()) {
+    return (
+      <FirstTimeSetup
+        onSetupComplete={(newAccounts) => {
+          handleLoginSuccess(newAccounts[0]);
+        }}
+        profile={profile}
+      />
+    );
+  }
+
+  // If accounts exist but user is not logged in, show secure login
   if (!currentUser) {
     return (
       <LoginScreen
         onLoginSuccess={handleLoginSuccess}
         profile={profile}
+        onResetSanctuary={() => {
+          resetSanctuaryAccounts();
+          setCurrentUser(null);
+        }}
       />
     );
   }

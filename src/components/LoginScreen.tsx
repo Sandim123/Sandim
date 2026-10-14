@@ -1,18 +1,23 @@
 import React, { useState } from 'react';
 import { UserAccount, PartnerProfile } from '../types';
 import { authenticateCredentials, getStoredAccounts } from '../lib/auth';
-import { Heart, Lock, User, Eye, EyeOff, ShieldCheck, Sparkles, Key } from 'lucide-react';
+import { Heart, Lock, User, Eye, EyeOff, ShieldCheck, Sparkles, Key, RotateCcw } from 'lucide-react';
 import heroImg from '../assets/images/couple_hero_banner_1791938246946.jpg';
 
 interface LoginScreenProps {
   onLoginSuccess: (user: UserAccount) => void;
   profile: PartnerProfile;
+  onResetSanctuary?: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, profile }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({
+  onLoginSuccess,
+  profile,
+  onResetSanctuary,
+}) => {
   const accounts = getStoredAccounts();
   const [username, setUsername] = useState(accounts[0]?.username || 'alex');
-  const [password, setPassword] = useState('forever2026');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,18 +41,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, profil
 
   const fillQuickCredentials = (user: UserAccount) => {
     setUsername(user.username);
-    // Fill default password helper for convenience
-    if (user.id === 'partner1') {
-      setPassword('forever2026');
-    } else {
-      setPassword('always2026');
-    }
+    setPassword('');
     setErrorMsg(null);
   };
 
   return (
     <div className="min-h-screen bg-[#faf8f5] flex flex-col justify-center items-center px-4 py-8 sm:py-12">
-      {/* Background aesthetic touches */}
       <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 bg-white border border-[#e8e2d8] rounded-3xl overflow-hidden shadow-xl">
         {/* Left Side: Visual Sanctuary & Couple Branding */}
         <div className="relative bg-[#1c1917] p-6 sm:p-10 flex flex-col justify-between text-white overflow-hidden min-h-[190px] sm:min-h-[260px] md:min-h-[540px]">
@@ -99,7 +98,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, profil
             </p>
           </div>
 
-          {/* Quick Account Selector / Quick Switch */}
+          {/* Quick Account Selector */}
           <div className="space-y-2">
             <div className="text-[11px] font-semibold text-[#8c827a] uppercase tracking-wider">
               Select Your Account:
@@ -183,7 +182,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, profil
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-9 pr-3 py-2.5 sm:py-2 text-base sm:text-sm border border-[#ded6cb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#c85a54]/20 focus:border-[#c85a54] bg-[#faf8f5]"
-                  placeholder="Enter password"
+                  placeholder="Enter your private password"
                 />
               </div>
             </div>
@@ -199,30 +198,40 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, profil
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-2.5 text-xs font-semibold text-white bg-[#c85a54] hover:bg-[#b34842] rounded-xl transition-colors shadow-xs cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+              className="w-full py-2.5 text-xs font-semibold text-white bg-[#c85a54] hover:bg-[#b34842] rounded-xl transition-colors shadow-xs cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5 min-h-[44px]"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>{isLoading ? 'Verifying...' : 'Unlock Our Sanctuary'}</span>
             </button>
           </form>
 
-          {/* Credentials Info Helper */}
+          {/* Privacy & GitHub Safety Guarantee */}
           <div className="p-3 bg-[#faf6f0] border border-[#ede7de] rounded-xl text-[11px] text-[#6e635b] space-y-1">
             <div className="font-semibold text-[#2c2420] flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5 text-[#059669]" />
-              <span>Distinct Account Credentials:</span>
+              <span>GitHub Privacy Protection:</span>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-0.5 text-[#4a4038]">
-              <div>
-                <strong>{accounts[0]?.displayName || profile.name1}:</strong> @{accounts[0]?.username}
-              </div>
-              <div>
-                <strong>{accounts[1]?.displayName || profile.name2}:</strong> @{accounts[1]?.username}
-              </div>
-            </div>
-            <p className="text-[10px] text-[#8c827a] pt-1">
-              Usernames and passwords can be updated anytime inside Settings after logging in.
+            <p className="text-[10px] text-[#7a7068] leading-relaxed">
+              Passwords and uploaded photos are stored exclusively in this browser's private local storage.
+              <strong> Zero credentials or personal photos are stored in the code repository or visible on GitHub.</strong>
             </p>
+
+            {onResetSanctuary && (
+              <div className="pt-1 text-right">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Reset couple accounts and re-create your passwords?')) {
+                      onResetSanctuary();
+                    }
+                  }}
+                  className="text-[10px] text-[#c85a54] hover:underline flex items-center gap-1 ml-auto cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset / Change Passwords Setup</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

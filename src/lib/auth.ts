@@ -4,9 +4,10 @@ const STORAGE_KEYS = {
   ACCOUNTS: 'everus_user_accounts_v1',
   SESSION: 'everus_auth_session_v1',
   WELCOME_MSG: 'everus_welcome_popup_v1',
+  IS_INITIALIZED: 'everus_initialized_v1',
 };
 
-// Generates hex string from SHA-256
+// Generates hex string from SHA-256 with cryptographic salt
 export async function hashPassword(password: string, salt: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(password + salt);
@@ -15,38 +16,12 @@ export async function hashPassword(password: string, salt: string): Promise<stri
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Generate random hex salt
+// Generate secure random hex salt
 export function generateSalt(): string {
   const arr = new Uint8Array(16);
   crypto.getRandomValues(arr);
   return Array.from(arr).map((b) => b.toString(16).padStart(2, '0')).join('');
 }
-
-// Fixed known salts and precomputed hashes for initial accounts
-const DEFAULT_SALT_1 = 'everus_salt_alex_2026';
-const DEFAULT_SALT_2 = 'everus_salt_maya_2026';
-
-// Precomputed SHA-256 for 'forever2026' + DEFAULT_SALT_1
-// and 'always2026' + DEFAULT_SALT_2
-// We also verify / recalculate if needed dynamically.
-export const DEFAULT_ACCOUNTS: UserAccount[] = [
-  {
-    id: 'partner1',
-    username: 'alex',
-    displayName: 'Alex',
-    salt: DEFAULT_SALT_1,
-    // SHA256 of "forever2026" + "everus_salt_alex_2026"
-    passwordHash: '8b7d605c3127811904a29a8a7db324b1ff355d9d72a50a1df3e370a4a821e263',
-  },
-  {
-    id: 'partner2',
-    username: 'maya',
-    displayName: 'Maya',
-    salt: DEFAULT_SALT_2,
-    // SHA256 of "always2026" + "everus_salt_maya_2026"
-    passwordHash: 'e6a7c0628e82ef45b9a89c3bc784f1fa023e10fa1eb29ad4f938f323a7bbd352',
-  },
-];
 
 export const DEFAULT_WELCOME_MESSAGE: PartnerWelcomeMessage = {
   id: 'wm-initial',
@@ -61,7 +36,21 @@ export const DEFAULT_WELCOME_MESSAGE: PartnerWelcomeMessage = {
   displayCount: 0,
 };
 
-// Retrieve stored accounts or initialize with defaults
+// Check if couple accounts have been initialized on this device
+export function hasInitializedAccounts(): boolean {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+    if (raw) {
+      const parsed: UserAccount[] = JSON.parse(raw);
+      return Array.isArray(parsed) && parsed.length >= 2;
+    }
+  } catch (e) {
+    console.error('Error checking account initialization', e);
+  }
+  return false;
+}
+
+// Retrieve stored accounts
 export function getStoredAccounts(): UserAccount[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
@@ -74,18 +63,49 @@ export function getStoredAccounts(): UserAccount[] {
   } catch (e) {
     console.error('Error reading accounts', e);
   }
-
-  // Save default accounts on first load
-  saveAccounts(DEFAULT_ACCOUNTS);
-  return DEFAULT_ACCOUNTS;
+  return [];
 }
 
 export function saveAccounts(accounts: UserAccount[]): void {
   try {
     localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+    localStorage.setItem(STORAGE_KEYS.IS_INITIALIZED, 'true');
   } catch (e) {
     console.error('Error saving accounts', e);
   }
+}
+
+// First-time setup wizard: create both accounts with zero passwords stored in code!
+export async function initializeSanctuaryAccounts(
+  partner1: { username: string; displayName: string; password: string },
+  partner2: { username: string; displayName: string; password: string }
+): Promise<UserAccount[]> {
+  const salt1 = generateSalt();
+  const salt2 = generateSalt();
+
+  const hash1 = await hashPassword(partner1.password, salt1);
+  const hash2 = await hashPassword(partner2.password, salt2);
+
+  const accounts: UserAccount[] = [
+    {
+      id: 'partner1',
+      username: partner1.username.trim().toLowerCase(),
+      displayName: partner1.displayName.trim() || 'Alex',
+      salt: salt1,
+      passwordHash: hash1,
+      lastLoginAt: Date.now(),
+    },
+    {
+      id: 'partner2',
+      username: partner2.username.trim().toLowerCase(),
+      displayName: partner2.displayName.trim() || 'Maya',
+      salt: salt2,
+      passwordHash: hash2,
+    },
+  ];
+
+  saveAccounts(accounts);
+  return accounts;
 }
 
 // Authenticate username and password
@@ -94,8 +114,11 @@ export async function authenticateCredentials(
   passwordInput: string
 ): Promise<{ success: boolean; user?: UserAccount; error?: string }> {
   const accounts = getStoredAccounts();
-  const cleanedUsername = usernameInput.trim().toLowerCase();
+  if (accounts.length === 0) {
+    return { success: false, error: 'No accounts have been created yet. Please initialize your sanctuary.' };
+  }
 
+  const cleanedUsername = usernameInput.trim().toLowerCase();
   const user = accounts.find((a) => a.username.toLowerCase() === cleanedUsername);
   if (!user) {
     return { success: false, error: 'No account found with this username' };
@@ -157,6 +180,17 @@ export function clearSession(): void {
     localStorage.removeItem(STORAGE_KEYS.SESSION);
   } catch (e) {
     console.error('Error clearing session', e);
+  }
+}
+
+// Reset accounts and session
+export function resetSanctuaryAccounts(): void {
+  try {
+    localStorage.removeItem(STORAGE_KEYS.ACCOUNTS);
+    localStorage.removeItem(STORAGE_KEYS.SESSION);
+    localStorage.removeItem(STORAGE_KEYS.IS_INITIALIZED);
+  } catch (e) {
+    console.error('Error resetting accounts', e);
   }
 }
 

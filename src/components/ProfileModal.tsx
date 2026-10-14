@@ -428,6 +428,18 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 </button>
               </form>
             </div>
+
+            {/* GitHub Privacy Protection Guarantee */}
+            <div className="p-3 bg-[#e7f4ed] border border-[#a8dfc2] rounded-2xl flex items-start gap-2.5 text-xs text-[#1b7a4b]">
+              <Shield className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <span className="font-bold">Public GitHub Privacy Safe</span>
+                <p className="text-[11px] opacity-90 leading-relaxed">
+                  All photos you upload and passwords you create are stored strictly in this browser’s private database.
+                  Nothing is written to git source code or visible when your repository is published on GitHub.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
