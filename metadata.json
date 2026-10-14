@@ -1,0 +1,6 @@
+{
+  "name": "Everus — Our Shared Story",
+  "description": "A private sanctuary for two: live relationship timer since January 6th 2026, shared collaborative calendar, memory photo gallery, and private couples journal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
